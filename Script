@@ -4,10 +4,46 @@ BASE_RADIO <- read_csv("C:/Users/paaur/OneDrive/Escritorio/data/env_eph.csv")
 BASE_EST_PROD <- read_csv("C:/Users/paaur/OneDrive/Escritorio/data/distribucion_establecimientos_productivos_sexo.csv")
 BASE_VUL_SANIT <- read_csv("C:/Users/paaur/OneDrive/Escritorio/data/vuln_sanit.csv")
 BASE_CENSO <- read_csv("C:/Users/paaur/OneDrive/Escritorio/data/radios_hogar.csv")
-
-##########
+BASE_ENES <- read_csv("C:/Users/dell/Downloads/base_eneshogares.csv", locale = locale(encoding = "UTF-8")) ##agg valen
+########## 
 
 #Creando variable radio en la base que no la tenia 
 
 BASE_RADIO <- BASE_RADIO %>%
   mutate("radio" = paste0(codprov, coddepto, frac2010, radio2010))
+
+## AGRUPAMOS VARIABLES DE LA BASE DEL CENSO EN TRES CATEGORIAS: SANEAMIENTO, SERVICIOS E INFRAESTRUCTURA Y CALCULAMOS SUS INDICES
+vars_saneamiento <- c("banio_uso_exclusivo", "tiene_bano_o_letrina_si", "inodoro_con_cadena")
+vars_servicios <- c("desague_red_cloaca", "cocina_gas_red", "agua_de_red", "agua_canieria_dentro")
+vars_infraestructura <- c("techo_membrana", "piso_ceramica_baldosa", "revestimiento_techo")
+
+# Índice de saneamiento
+BASE_CENSO$indice_saneamiento <- rowMeans(BASE_CENSO[, vars_saneamiento], na.rm = TRUE)
+
+# Índice de servicios
+BASE_CENSO$indice_servicios <- rowMeans(BASE_CENSO[, vars_servicios], na.rm = TRUE)
+
+# Índice de infraestructura
+BASE_CENSO$indice_infraestructura <- rowMeans(BASE_CENSO[, vars_infraestructura], na.rm = TRUE)
+
+## CLASIFICAMOS RESULTADOS POR NIVELES
+# Clasificación por terciles del índice de saneamiento
+BASE_CENSO$nivel_saneamiento <- cut(BASE_CENSO$indice_saneamiento,
+                                   breaks = quantile(BASE_CENSO$indice_saneamiento, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+                                   labels = c("Bajo", "Medio", "Alto"),
+                                   include.lowest = TRUE
+)
+
+# Clasificación por terciles del índice de servicios
+BASE_CENSO$nivel_servicios <- cut(BASE_CENSO$indice_servicios,
+                                 breaks = quantile(BASE_CENSO$indice_servicios, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+                                 labels = c("Bajo", "Medio", "Alto"),
+                                 include.lowest = TRUE
+)
+
+# Clasificación por terciles del índice de infraestructura
+BASE_CENSO$nivel_infraestructura <- cut(BASE_CENSO$indice_infraestructura,
+                                       breaks = quantile(BASE_CENSO$indice_infraestructura, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE),
+                                       labels = c("Bajo", "Medio", "Alto"),
+                                       include.lowest = TRUE
+)
